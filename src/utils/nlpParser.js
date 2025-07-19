@@ -89,15 +89,58 @@ function buildProjectsSection(projects) {
   
   let section = "Available Projects and Tasks:\n"
   
+  // Group projects by client for better organization
+  const clientGroups = new Map()
+  const noClientProjects = []
+  
   projects.forEach(project => {
-    section += `- Project: "${project.name}"`
-    if (project.tasks && project.tasks.length > 0) {
-      section += `\n  Tasks: ${project.tasks.map(t => `"${t.name}"`).join(', ')}`
+    if (project.clientName) {
+      const clientKey = project.clientName
+      if (!clientGroups.has(clientKey)) {
+        clientGroups.set(clientKey, [])
+      }
+      clientGroups.get(clientKey).push(project)
     } else {
-      section += `\n  Tasks: No tasks available`
+      noClientProjects.push(project)
     }
-    section += `\n`
   })
+  
+  // Display projects grouped by client
+  clientGroups.forEach((clientProjects, clientName) => {
+    section += `\nClient: "${clientName}"\n`
+    clientProjects.forEach(project => {
+      section += `  - Project: "${project.name}"`
+      if (project.tasks && project.tasks.length > 0) {
+        section += `\n    Tasks: ${project.tasks.map(t => `"${t.name}"`).join(', ')}`
+      } else {
+        section += `\n    Tasks: No tasks available`
+      }
+      section += `\n`
+    })
+  })
+  
+  // Display projects without clients
+  if (noClientProjects.length > 0) {
+    section += `\nProjects without clients:\n`
+    noClientProjects.forEach(project => {
+      section += `- Project: "${project.name}"`
+      if (project.tasks && project.tasks.length > 0) {
+        section += `\n  Tasks: ${project.tasks.map(t => `"${t.name}"`).join(', ')}`
+      } else {
+        section += `\n  Tasks: No tasks available`
+      }
+      section += `\n`
+    })
+  }
+  
+  // Add client-project mapping summary
+  if (clientGroups.size > 0) {
+    section += `\nClient-Project Mapping (for reference):\n`
+    clientGroups.forEach((clientProjects, clientName) => {
+      const projectNames = clientProjects.map(p => `"${p.name}"`).join(', ')
+      section += `- Client "${clientName}" → Projects: ${projectNames}\n`
+    })
+  }
   
   return section
 }
@@ -134,6 +177,12 @@ CRITICAL: THIS WEEK's dates (Monday to Sunday):
 - Sunday this week = ${weekInfo.weekdays[6].date}
 
 ${projectsSection}
+
+Project Assignment Rules:
+1. If the user mentions a project name that exists, use that project
+2. If the user mentions a client name (and no specific project), use the project associated with that client
+3. If a client has multiple projects, choose the most relevant one based on context
+4. If you cannot determine the project, set project to null
 
 Task Assignment Rules:
 1. If the user explicitly mentions a task name that matches exactly, use it
@@ -181,12 +230,18 @@ Examples with current context (today is ${weekInfo.dayNames[weekInfo.currentDay]
 - "Log 2 hours working with marketer" → start from ${currentRoundedTime}, duration 2h, no project, task=null
 - "Monday this week meeting" → Monday ${weekInfo.weekdays[0].date} at 9:00 AM, try to guess meeting-related task
 - "Lock 2 hours researching Monday 10am this week" → Monday ${weekInfo.weekdays[0].date} 10:00-12:00 AM, try to guess research-related task
-- "Yesterday 3pm to 5pm working on bug fixes for BETA project" → yesterday with specified times, try to match bug-related task`
+- "Yesterday 3pm to 5pm working on bug fixes for BETA project" → yesterday with specified times, try to match bug-related task
+- "Log 1 hour to XWAT client" → If XWAT is a client, use the project associated with XWAT client
+- "Log development time to ACME" → If ACME is a client name, use the appropriate project for ACME client`
 
   // Log the full system prompt for debugging
   console.log('System prompt being sent:', SYSTEM_PROMPT)
   console.log('User command:', command)
-  console.log('Available projects:', projects.map(p => ({ name: p.name, tasks: p.tasks?.map(t => t.name) || [] })))
+  console.log('Available projects:', projects.map(p => ({ 
+    name: p.name, 
+    client: p.clientName, 
+    tasks: p.tasks?.map(t => t.name) || [] 
+  })))
 
   try {
     const response = await fetch(`${OPENAI_API_BASE}/chat/completions`, {
@@ -300,4 +355,4 @@ function getOpenAIApiKey() {
   }
   
   return null
-} 
+}

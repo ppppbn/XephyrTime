@@ -86,13 +86,15 @@ export async function getProjectsWithTasks(token, workspaceId) {
         const tasks = await getProjectTasks(token, workspaceId, project.id)
         projectsWithTasks.push({
           ...project,
-          tasks: tasks || []
+          tasks: tasks || [],
+          clientName: project.clientName || null
         })
       } catch (error) {
         console.warn(`Failed to fetch tasks for project ${project.name}:`, error)
         projectsWithTasks.push({
           ...project,
-          tasks: []
+          tasks: [],
+          clientName: project.clientName || null
         })
       }
     }
@@ -115,9 +117,21 @@ export async function submitTimeEntries(token, entries) {
     const defaultWorkspace = workspaces[0]
     const workspaceId = defaultWorkspace.id
     
-    // Get projects with their tasks
+    // Get projects with their tasks and client info
     const projects = await getProjectsWithTasks(token, workspaceId)
     const projectMap = new Map(projects.map(p => [p.name.toLowerCase(), p]))
+    
+    // Create client-to-project mapping for client-based project lookup
+    const clientProjectMap = new Map()
+    projects.forEach(project => {
+      if (project.clientName) {
+        const clientKey = project.clientName.toLowerCase()
+        if (!clientProjectMap.has(clientKey)) {
+          clientProjectMap.set(clientKey, [])
+        }
+        clientProjectMap.get(clientKey).push(project)
+      }
+    })
     
     // Submit each entry
     const results = []
@@ -126,26 +140,40 @@ export async function submitTimeEntries(token, entries) {
         // Find project ID and task ID if project name is provided
         let projectId = null
         let taskId = null
+        let resolvedProject = null
         
         if (entry.project) {
-          const project = projectMap.get(entry.project.toLowerCase())
-          if (project) {
-            projectId = project.id
+          // First try direct project name match
+          resolvedProject = projectMap.get(entry.project.toLowerCase())
+          
+          // If no direct match, try client name match
+          if (!resolvedProject) {
+            const clientProjects = clientProjectMap.get(entry.project.toLowerCase())
+            if (clientProjects && clientProjects.length > 0) {
+              // If multiple projects for same client, take the first one
+              // Could be enhanced to be smarter about selection
+              resolvedProject = clientProjects[0]
+              console.log(`Found project "${resolvedProject.name}" via client "${entry.project}"`)
+            }
+          }
+          
+          if (resolvedProject) {
+            projectId = resolvedProject.id
             
             // Look for task if specified
-            if (entry.task && project.tasks && project.tasks.length > 0) {
-              const task = project.tasks.find(t => 
+            if (entry.task && resolvedProject.tasks && resolvedProject.tasks.length > 0) {
+              const task = resolvedProject.tasks.find(t => 
                 t.name.toLowerCase() === entry.task.toLowerCase()
               )
               if (task) {
                 taskId = task.id
-                console.log(`Found task "${entry.task}" for project "${entry.project}"`)
+                console.log(`Found task "${entry.task}" for project "${resolvedProject.name}"`)
               } else {
-                console.warn(`Task "${entry.task}" not found in project "${entry.project}"`)
+                console.warn(`Task "${entry.task}" not found in project "${resolvedProject.name}"`)
               }
             }
           } else {
-            console.warn(`Project "${entry.project}" not found, submitting without project`)
+            console.warn(`Project or client "${entry.project}" not found, submitting without project`)
           }
         }
         

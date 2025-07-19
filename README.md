@@ -119,6 +119,24 @@ XephyrTime intelligently assigns tasks to your time entries:
 
 3. **Fallback**: If no appropriate task can be determined, the entry is created without a task
 
+### Smart Project Assignment
+
+XephyrTime can identify projects in multiple ways:
+
+1. **Direct Project Name**: Use the exact project name
+   - "Log 2 hours to Project Alpha" → Assigns to "Project Alpha"
+
+2. **Client-Based Matching**: Mention the client name when you don't know the exact project
+   - "Log 2 hours to XWAT" → If XWAT is a client, assigns to the project(s) under XWAT
+   - "Log development time to ACME" → Finds the project associated with ACME client
+
+3. **Intelligent Context**: The AI considers both project and client information to make the best match
+
+**Example Scenarios:**
+- Your Clockify has: Client "XWAT" with Project "XMAP"
+- Command: "Log 3 hours to XWAT" → Automatically assigns to "XMAP" project
+- Command: "Log meeting with ACME client" → Finds project under ACME client
+
 ### Smart Defaults
 
 The app includes intelligent defaults:
@@ -152,6 +170,15 @@ Log standup to Project Alpha
 
 Log 2 hours bug fixing to Mobile App
 → Assigns to "Bug Fixes" or "Development" task based on available options
+```
+
+### Client-Based Project Assignment Examples
+```
+Log 3 hours to XWAT
+→ If XWAT is a client, automatically assigns to the project under XWAT client
+
+Log development meeting with ACME yesterday 2pm
+→ Finds the project associated with ACME client and assigns appropriate meeting task
 ```
 
 ### Current Week (Fixed Behavior)
