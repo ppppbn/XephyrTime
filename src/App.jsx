@@ -3,6 +3,7 @@ import { Settings, AlertCircle, CheckCircle } from 'lucide-react'
 import TokenForm from './components/TokenForm'
 import CommandInput from './components/CommandInput'
 import EntryPreview from './components/EntryPreview'
+import TeamsImport from './components/TeamsImport'
 import Toast from './components/Toast'
 import { validateToken, submitTimeEntries } from './utils/clockifyApi'
 import { parseCommand } from './utils/nlpParser'
@@ -86,6 +87,45 @@ function App() {
     }
   }
 
+  const handleTeamsImport = async (importedEntries) => {
+    if (!apiToken) {
+      showToast('Please set your Clockify API token first', 'error')
+      setShowTokenForm(true)
+      return
+    }
+
+    try {
+      // Process imported entries through the NLP parser for task assignment
+      // and to ensure consistent formatting
+      let processedEntries = []
+      
+      for (const entry of importedEntries) {
+        // Create a natural language command from the calendar event
+        const nlCommand = `Log ${entry.description} ${entry.project ? `to ${entry.project}` : ''} from ${new Date(entry.start).toLocaleString()} to ${new Date(entry.end).toLocaleString()}`
+        
+        try {
+          const parsed = await parseCommand(nlCommand)
+          processedEntries.push(...parsed)
+        } catch (error) {
+          // If parsing fails, use the original entry with some cleanup
+          console.warn('Failed to parse calendar entry, using original:', error)
+          processedEntries.push({
+            project: entry.project,
+            task: null,
+            description: entry.description.charAt(0).toUpperCase() + entry.description.slice(1),
+            start: entry.start,
+            end: entry.end
+          })
+        }
+      }
+
+      setParsedEntries(processedEntries)
+      showToast(`Processed ${processedEntries.length} calendar entries for review`, 'success')
+    } catch (error) {
+      showToast(`Failed to process imported entries: ${error.message}`, 'error')
+    }
+  }
+
   const handleEntriesSubmit = async () => {
     if (parsedEntries.length === 0) {
       showToast('No entries to submit', 'error')
@@ -158,7 +198,7 @@ function App() {
             XephyrTime
           </h1>
           <p className="text-gray-600">
-            Log time entries to Clockify using natural language commands
+            Log time entries to Clockify using natural language commands or Teams calendar import
           </p>
         </div>
 
@@ -169,6 +209,11 @@ function App() {
             onSubmit={handleCommandSubmit}
             loading={loading}
             onTranscript={setCommand}
+            showToast={showToast}
+          />
+
+          <TeamsImport
+            onImportEntries={handleTeamsImport}
             showToast={showToast}
           />
 

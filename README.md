@@ -1,6 +1,6 @@
 # XephyrTime
 
-A single-page web application that lets you log time entries to Clockify using natural language commands, with support for both text and voice input.
+A single-page web application that lets you log time entries to Clockify using natural language commands, with support for both text and voice input, plus Microsoft Teams calendar integration.
 
 ## Features
 
@@ -10,6 +10,7 @@ A single-page web application that lets you log time entries to Clockify using n
 - ⏰ **Recurring Entries**: Supports commands like "Log standup every workday this week"
 - 🕐 **Smart Defaults**: Auto-rounds to 15-min intervals, defaults to current time and current week
 - 📋 **Task Intelligence**: Automatically identifies and assigns tasks within projects
+- 📅 **Teams Calendar Import**: Import meetings from Microsoft Teams/Outlook calendar automatically
 - 🔐 **Secure**: API tokens stored locally, no server component
 - ✅ **Validation**: Checks for overlapping entries and missing projects
 - 🌐 **Modern UI**: Beautiful, responsive design with TailwindCSS
@@ -31,13 +32,25 @@ Create a `.env` file in the root directory:
 cp .env.example .env
 ```
 
-Add your OpenAI API key to the `.env` file:
+Add your API keys to the `.env` file:
 
 ```
 VITE_OPENAI_API_KEY=your_openai_api_key_here
+VITE_AZURE_CLIENT_ID=your_azure_app_client_id_here
 ```
 
-Get your OpenAI API key from: https://platform.openai.com/api-keys
+**Get your OpenAI API key from:** https://platform.openai.com/api-keys
+
+**Set up Azure App Registration for Teams integration:**
+1. Go to [Azure Portal - App Registrations](https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationsListBlade)
+2. Click "New registration"
+3. Name: "XephyrTime Calendar Integration"
+4. Supported account types: "Accounts in any organizational directory (Any Azure AD directory - Multitenant) and personal Microsoft accounts"
+5. Redirect URI: `http://localhost:5173` (for development)
+6. After creation, copy the "Application (client) ID" to your `.env` file
+7. Go to "API permissions" → "Add a permission" → "Microsoft Graph" → "Delegated permissions"
+8. Add: `User.Read` and `Calendars.Read`
+9. Click "Grant admin consent" (if you're an admin) or ask your admin
 
 ### 3. Get Your Clockify API Token
 
@@ -105,6 +118,41 @@ Type natural language commands in the text area:
 3. Release Space key to stop recording and process
 4. Voice commands are transcribed automatically
 
+### Teams Calendar Import
+
+**Setup:**
+1. Click "Sign In" in the Teams Calendar Import section
+2. Sign in with your Microsoft account (work or personal)
+3. Grant permissions to read your calendar
+
+**Import Process:**
+1. Click "Import This Week's Meetings"
+2. The system automatically:
+   - Fetches all calendar events for the current week (Monday-Sunday)
+   - Filters out all-day events and tentative meetings
+   - Extracts project names from meeting titles using patterns:
+     - **UPPERCASE** acronyms (XMAP, ACME, etc.)
+     - **[Bracketed]** text
+     - **-Dashed-** text
+   - Converts meeting times to time entries
+   - Processes through AI for smart task assignment
+3. Review the imported entries in the preview
+4. Submit to Clockify
+
+**Meeting Title Examples:**
+- "XMAP Planning Meeting" → Project: "XMAP", Description: "Planning Meeting"  
+- "[ACME] Development Sync" → Project: "ACME", Description: "Development Sync"
+- "Client Call -BETA-" → Project: "BETA", Description: "Client Call"
+- "Daily Standup" → Project: null, Description: "Daily Standup"
+
+**Features:**
+- ✅ Automatic project extraction from meeting titles
+- ✅ Smart task assignment based on meeting context
+- ✅ Filters out irrelevant events (all-day, tentative)
+- ✅ Maintains exact meeting times
+- ✅ Handles recurring meetings
+- ✅ Works with both Teams and Outlook calendars
+
 ### Smart Task Assignment
 
 XephyrTime intelligently assigns tasks to your time entries:
@@ -149,8 +197,8 @@ The app includes intelligent defaults:
 
 ### Submitting Entries
 
-1. After parsing a command, you'll see a preview of the time entries
-2. Review the entries for accuracy, including assigned tasks
+1. After parsing a command or importing from Teams, you'll see a preview of the time entries
+2. Review the entries for accuracy, including assigned tasks and projects
 3. Check for any warnings (overlapping times, missing projects)
 4. Click "Submit to Clockify" to log the entries
 5. Success notifications show detailed information: "✅ Successfully logged 3 entries (5.5h total) across 2 projects"
@@ -179,6 +227,15 @@ Log 3 hours to XWAT
 
 Log development meeting with ACME yesterday 2pm
 → Finds the project associated with ACME client and assigns appropriate meeting task
+```
+
+### Teams Calendar Import Examples
+```
+Calendar event: "XMAP Planning Meeting" (2pm-3pm today)
+→ Imports as: Project "XMAP", Task "Meetings", Description "Planning Meeting"
+
+Calendar event: "[ACME] Development Review" (10am-11am Monday)
+→ Imports as: Project "ACME", Task "Development", Description "Development Review"
 ```
 
 ### Current Week (Fixed Behavior)
@@ -214,6 +271,12 @@ Log 2 hours to Project A and 1 hour to Project B today starting at 9am
 - Restart the development server after adding the key
 - Alternatively, the app will prompt you to enter the key in the browser
 
+### Teams Integration Issues
+- **Sign-in fails**: Ensure your Azure app is properly configured with correct permissions
+- **No calendar events**: Check that you have meetings in your calendar for the current week
+- **Permission denied**: Make sure `User.Read` and `Calendars.Read` permissions are granted
+- **Import fails**: Verify your Microsoft account has access to the calendar you want to import from
+
 ### Voice Recording Not Working
 - Ensure your browser has microphone permissions
 - Check that your microphone is working
@@ -241,11 +304,13 @@ src/
 ├── components/
 │   ├── CommandInput.jsx    # Text and voice input with Space shortcut
 │   ├── EntryPreview.jsx    # Preview parsed entries with task display
+│   ├── TeamsImport.jsx     # Microsoft Teams calendar integration
 │   ├── Toast.jsx          # Notifications with detailed logging info
 │   └── TokenForm.jsx      # API token management
 ├── utils/
 │   ├── clockifyApi.js     # Clockify API integration with task support
 │   ├── nlpParser.js       # OpenAI GPT-4o-mini parsing with task intelligence
+│   ├── teamsApi.js        # Microsoft Graph API for Teams calendar
 │   └── whisperApi.js      # OpenAI Whisper transcription
 ├── App.jsx                # Main application
 ├── main.jsx              # React entry point
@@ -256,6 +321,7 @@ src/
 
 - **Clockify Token**: Stored in browser localStorage only
 - **OpenAI API Key**: Used for parsing and transcription, stored locally
+- **Microsoft Account**: Uses OAuth 2.0 flow, tokens stored in browser session storage
 - **No Server**: Everything runs in your browser, no data sent to external servers except the APIs you explicitly use
 
 ## Browser Compatibility
