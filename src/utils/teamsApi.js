@@ -97,11 +97,11 @@ class TeamsApiService {
 
       console.log(`Fetching calendar events from ${startTime} to ${endTime}`)
 
-      // Fetch calendar events
+      // Fetch calendar events with response status for better filtering
       const events = await this.graphClient
         .api('/me/events')
         .filter(`start/dateTime ge '${startTime}' and end/dateTime le '${endTime}'`)
-        .select('subject,start,end,location,attendees,organizer,isAllDay,showAs')
+        .select('subject,start,end,location,attendees,organizer,isAllDay,showAs,responseStatus')
         .orderby('start/dateTime')
         .get()
 
@@ -116,10 +116,16 @@ class TeamsApiService {
   convertCalendarEventsToTimeEntries(events, defaultProject = null) {
     return events
       .filter(event => {
-        // Filter out all-day events and declined meetings
-        return !event.isAllDay && 
-               event.showAs !== 'free' && 
-               event.showAs !== 'tentative'
+        // Filter out all-day events and only truly irrelevant meetings
+        if (event.isAllDay) return false
+        
+        // Filter out free time (blocked time that isn't a real meeting)
+        if (event.showAs === 'free') return false
+        
+        // Filter out declined meetings (but keep tentative, busy, etc.)
+        if (event.responseStatus && event.responseStatus.response === 'declined') return false
+        
+        return true
       })
       .map(event => {
         // Extract meeting info

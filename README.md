@@ -129,7 +129,8 @@ Type natural language commands in the text area:
 1. Click "Import This Week's Meetings"
 2. The system automatically:
    - Fetches all calendar events for the current week (Monday-Sunday)
-   - Filters out all-day events and tentative meetings
+   - Filters out all-day events and declined meetings
+   - Includes tentative and busy meetings (you should track time even if attendance is uncertain)
    - Extracts project names from meeting titles using patterns:
      - **UPPERCASE** acronyms (XMAP, ACME, etc.)
      - **[Bracketed]** text
@@ -148,7 +149,8 @@ Type natural language commands in the text area:
 **Features:**
 - ✅ Automatic project extraction from meeting titles
 - ✅ Smart task assignment based on meeting context
-- ✅ Filters out irrelevant events (all-day, tentative)
+- ✅ Includes tentative meetings (you should track time even if unsure about attendance)
+- ✅ Filters out irrelevant events (all-day, declined, free time blocks)
 - ✅ Maintains exact meeting times
 - ✅ Handles recurring meetings
 - ✅ Works with both Teams and Outlook calendars

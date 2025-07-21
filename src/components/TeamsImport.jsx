@@ -78,7 +78,7 @@ function TeamsImport({ onImportEntries, showToast }) {
       const timeEntries = teamsApi.convertCalendarEventsToTimeEntries(events)
       
       if (timeEntries.length === 0) {
-        showToast('No valid meetings found (filtered out all-day and tentative events)', 'info')
+        showToast('No valid meetings found (filtered out all-day, declined, and free time events)', 'info')
         return
       }
 
@@ -155,7 +155,8 @@ function TeamsImport({ onImportEntries, showToast }) {
             Import calendar events from this week as Clockify time entries. The system will automatically:
           </p>
           <ul className="text-xs text-gray-500 space-y-1 ml-4">
-            <li>• Filter out all-day events and tentative meetings</li>
+            <li>• Filter out all-day events and declined meetings</li>
+            <li>• Include tentative and busy meetings (you should track time even if unsure)</li>
             <li>• Extract project names from meeting titles (CAPS, [brackets], -dashes-)</li>
             <li>• Convert meeting times to time entries</li>
             <li>• Smart task assignment based on meeting context</li>
