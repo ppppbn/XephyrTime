@@ -1,6 +1,6 @@
 # XephyrTime
 
-A single-page web application that lets you log time entries to Clockify using natural language commands, with support for both text and voice input, plus Microsoft Teams calendar integration.
+A single-page web application that lets you log time entries to Clockify using natural language commands, with support for both text and voice input, plus Microsoft Calendar integration (Outlook, Teams, Microsoft 365).
 
 ## Features
 
@@ -10,7 +10,7 @@ A single-page web application that lets you log time entries to Clockify using n
 - ⏰ **Recurring Entries**: Supports commands like "Log standup every workday this week"
 - 🕐 **Smart Defaults**: Auto-rounds to 15-min intervals, defaults to current time and current week
 - 📋 **Task Intelligence**: Automatically identifies and assigns tasks within projects
-- 📅 **Teams Calendar Import**: Import meetings from Microsoft Teams/Outlook calendar automatically
+- 📅 **Microsoft Calendar Import**: Import meetings from Outlook, Teams, and Microsoft 365 calendars automatically
 - 🔐 **Secure**: API tokens stored locally, no server component
 - ✅ **Validation**: Checks for overlapping entries and missing projects
 - 🌐 **Modern UI**: Beautiful, responsive design with TailwindCSS
@@ -118,12 +118,18 @@ Type natural language commands in the text area:
 3. Release Space key to stop recording and process
 4. Voice commands are transcribed automatically
 
-### Teams Calendar Import
+### Microsoft Calendar Import
 
 **Setup:**
-1. Click "Sign In" in the Teams Calendar Import section
+1. Click "Sign In" in the Microsoft Calendar Import section
 2. Sign in with your Microsoft account (work or personal)
 3. Grant permissions to read your calendar
+
+**What it imports:**
+- ✅ **Outlook calendar events**
+- ✅ **Teams meeting events** 
+- ✅ **Microsoft 365 calendar events**
+- ✅ **Exchange calendar events**
 
 **Import Process:**
 1. Click "Import This Week's Meetings"
@@ -140,12 +146,6 @@ Type natural language commands in the text area:
 3. Review the imported entries in the preview
 4. Submit to Clockify
 
-**Meeting Title Examples:**
-- "XMAP Planning Meeting" → Project: "XMAP", Description: "Planning Meeting"  
-- "[ACME] Development Sync" → Project: "ACME", Description: "Development Sync"
-- "Client Call -BETA-" → Project: "BETA", Description: "Client Call"
-- "Daily Standup" → Project: null, Description: "Daily Standup"
-
 **Features:**
 - ✅ Automatic project extraction from meeting titles
 - ✅ Smart task assignment based on meeting context
@@ -153,7 +153,16 @@ Type natural language commands in the text area:
 - ✅ Filters out irrelevant events (all-day, declined, free time blocks)
 - ✅ Maintains exact meeting times
 - ✅ Handles recurring meetings
-- ✅ Works with both Teams and Outlook calendars
+- ✅ Works with all Microsoft calendar systems
+
+### Microsoft Calendar Import Examples
+```
+Calendar event: "XMAP Planning Meeting" (2pm-3pm today)
+→ Imports as: Project "XMAP", Task "Meetings", Description "Planning Meeting"
+
+Calendar event: "[ACME] Development Review" (10am-11am Monday)
+→ Imports as: Project "ACME", Task "Development", Description "Development Review"
+```
 
 ### Smart Task Assignment
 
@@ -231,7 +240,7 @@ Log development meeting with ACME yesterday 2pm
 → Finds the project associated with ACME client and assigns appropriate meeting task
 ```
 
-### Teams Calendar Import Examples
+### Microsoft Calendar Import Examples
 ```
 Calendar event: "XMAP Planning Meeting" (2pm-3pm today)
 → Imports as: Project "XMAP", Task "Meetings", Description "Planning Meeting"
@@ -273,7 +282,7 @@ Log 2 hours to Project A and 1 hour to Project B today starting at 9am
 - Restart the development server after adding the key
 - Alternatively, the app will prompt you to enter the key in the browser
 
-### Teams Integration Issues
+### Microsoft Calendar Integration Issues
 - **Sign-in fails**: Ensure your Azure app is properly configured with correct permissions
 - **No calendar events**: Check that you have meetings in your calendar for the current week
 - **Permission denied**: Make sure `User.Read` and `Calendars.Read` permissions are granted
@@ -304,19 +313,19 @@ Log 2 hours to Project A and 1 hour to Project B today starting at 9am
 ```
 src/
 ├── components/
-│   ├── CommandInput.jsx    # Text and voice input with Space shortcut
-│   ├── EntryPreview.jsx    # Preview parsed entries with task display
-│   ├── TeamsImport.jsx     # Microsoft Teams calendar integration
-│   ├── Toast.jsx          # Notifications with detailed logging info
-│   └── TokenForm.jsx      # API token management
+│   ├── CommandInput.jsx     # Text and voice input with Space shortcut
+│   ├── EntryPreview.jsx     # Preview parsed entries with task display
+│   ├── CalendarImport.jsx   # Microsoft Calendar integration (Outlook/Teams/M365)
+│   ├── Toast.jsx           # Notifications with detailed logging info
+│   └── TokenForm.jsx       # API token management
 ├── utils/
-│   ├── clockifyApi.js     # Clockify API integration with task support
-│   ├── nlpParser.js       # OpenAI GPT-4o-mini parsing with task intelligence
-│   ├── teamsApi.js        # Microsoft Graph API for Teams calendar
-│   └── whisperApi.js      # OpenAI Whisper transcription
-├── App.jsx                # Main application
-├── main.jsx              # React entry point
-└── index.css             # TailwindCSS styles
+│   ├── clockifyApi.js      # Clockify API integration with task support
+│   ├── nlpParser.js        # OpenAI GPT-4o-mini parsing with task intelligence
+│   ├── microsoftCalendarApi.js # Microsoft Graph API for calendar integration
+│   └── whisperApi.js       # OpenAI Whisper transcription
+├── App.jsx                 # Main application
+├── main.jsx               # React entry point
+└── index.css              # TailwindCSS styles
 ```
 
 ## API Keys and Privacy
@@ -335,4 +344,4 @@ src/
 
 ## License
 
-MIT License - feel free to modify and use as needed. 
+MIT License - feel free to modify and use as needed.

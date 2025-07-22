@@ -19,7 +19,7 @@ const loginRequest = {
   scopes: ['User.Read', 'Calendars.Read']
 }
 
-class TeamsApiService {
+class MicrosoftCalendarApiService {
   constructor() {
     this.msalInstance = new PublicClientApplication(msalConfig)
     this.graphClient = null
@@ -181,5 +181,5 @@ class TeamsApiService {
 }
 
 // Export singleton instance
-export const teamsApi = new TeamsApiService()
-export default teamsApi 
+export const microsoftCalendarApi = new MicrosoftCalendarApiService()
+export default microsoftCalendarApi 

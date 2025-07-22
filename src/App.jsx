@@ -3,7 +3,7 @@ import { Settings, AlertCircle, CheckCircle } from 'lucide-react'
 import TokenForm from './components/TokenForm'
 import CommandInput from './components/CommandInput'
 import EntryPreview from './components/EntryPreview'
-import TeamsImport from './components/TeamsImport'
+import CalendarImport from './components/CalendarImport'
 import Toast from './components/Toast'
 import { validateToken, submitTimeEntries } from './utils/clockifyApi'
 import { parseCommand } from './utils/nlpParser'
@@ -198,7 +198,7 @@ function App() {
             XephyrTime
           </h1>
           <p className="text-gray-600">
-            Log time entries to Clockify using natural language commands or Teams calendar import
+            Log time entries to Clockify using natural language commands or Microsoft Calendar import (Outlook/Teams/M365)
           </p>
         </div>
 
@@ -212,7 +212,7 @@ function App() {
             showToast={showToast}
           />
 
-          <TeamsImport
+          <CalendarImport
             onImportEntries={handleTeamsImport}
             showToast={showToast}
           />
